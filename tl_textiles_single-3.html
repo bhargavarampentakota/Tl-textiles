@@ -1,0 +1,741 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TL Textiles Platform</title>
+
+<script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+</head>
+<body style="margin:0">
+
+<div id="root"></div>
+
+<script type="text/babel">
+const {useState,useEffect}=React;
+
+// ── DEFAULTS ──────────────────────────────────────────────────────────────────
+const DEFAULT_VISITOR = {
+  heroTitle: "Quality Garments.",
+  heroTitleItalic: "Global Reach.",
+  heroSubtitle: "TL Textiles connects buyers worldwide with India's finest manufacturers — built on personal trust, direct deals, and a rewarding referral network.",
+  stat1Val: "₹5.5Cr+", stat1Label: "Trade Volume",
+  stat2Val: "10+",     stat2Label: "Active Buyers",
+  stat3Val: "3",       stat3Label: "Manufacturer Deals",
+  stat4Val: "2+",      stat4Label: "Export Countries",
+  how1Title: "Agents Find Manufacturers",
+  how1Desc: "Our agents personally meet local textile manufacturers and strike a deal — if orders come through their referral, the manufacturer pays the agent 10% of their profit on that deal.",
+  how2Title: "We Source & Trade",
+  how2Desc: "TL Textiles procures garments from these manufacturers at the agreed price and sells to buyers. A full official invoice goes to every buyer — transparent pricing, always.",
+  how3Title: "Buyers Refer Buyers",
+  how3Desc: "Any buyer can refer someone new. They simply tell the new buyer to mention their name or code word when placing the first order. The referring buyer earns 5% discount on their next order.",
+  how4Title: "Everyone Grows",
+  how4Desc: "Agents earn commission from the manufacturer side. Buyers grow the network and get rewarded. TL Textiles scales volume and relationships on both ends.",
+  agentCTATitle: "Want to Earn With Us?",
+  agentCTADesc: "Join TL Textiles as a referral agent. Meet local manufacturers, bring them into our network, and earn 10% commission on every deal that flows through you.",
+  agentCTAButton: "Become an Agent",
+  contactEmail: "contact@tltextiles.com",
+  contactPhone: "+91 98765 00000",
+  contactLocation: "Chennai, Tamil Nadu",
+  footerText: "Garment Trading & Export",
+  registrationNotice: "TL Textiles is registering in April 2026. Stay tuned.",
+  showRegistrationBanner: true,
+};
+
+const SEED_DATA = {
+  locals: [
+    { id:"l1",agentId:"ag1",businessName:"Sri Murugan Textiles",ownerName:"Murugan R",city:"Tirupur",state:"Tamil Nadu",pincode:"641604",phone:"+91 94321 09876",email:"murugan@smt.com",gst:"33ABCDE1234F1Z5",address:"12, Mill Road, Tirupur",products:"T-shirts, Polo shirts",pricePerPiece:180,minOrder:500,dealDate:"2026-01-15",commissionPct:10,agentCode:"THALIAVA",bankName:"Indian Bank",accountNo:"****4521",ifsc:"IDIB000T001",notes:"Owner prefers calls after 6pm. Very reliable for bulk orders.",status:"active",totalOrdersPlaced:4,totalVolume:3200000 },
+    { id:"l2",agentId:"ag1",businessName:"Kancheepuram Silks Co.",ownerName:"Anandhi S",city:"Kancheepuram",state:"Tamil Nadu",pincode:"631501",phone:"+91 93210 98765",email:"anandhi@ksc.com",gst:"33XYZAB5678G2Z1",address:"4, Silk Street, Kancheepuram",products:"Sarees, Dress material",pricePerPiece:850,minOrder:50,dealDate:"2026-02-20",commissionPct:10,agentCode:"THALIAVA",bankName:"SBI",accountNo:"****8823",ifsc:"SBIN0007812",notes:"Premium quality. Long lead time ~3 weeks.",status:"active",totalOrdersPlaced:2,totalVolume:1700000 },
+    { id:"l3",agentId:"ag2",businessName:"Coimbatore Knits",ownerName:"Rajan M",city:"Coimbatore",state:"Tamil Nadu",pincode:"641001",phone:"+91 97654 32109",email:"rajan@cbknits.com",gst:"33PQRST9012H3Z7",address:"8, Industrial Area, Coimbatore",products:"Knitwear, Sweaters",pricePerPiece:320,minOrder:200,dealDate:"2026-03-01",commissionPct:10,agentCode:"RAJAN22",bankName:"HDFC",accountNo:"****3310",ifsc:"HDFC0001234",notes:"Good for winter export orders.",status:"active",totalOrdersPlaced:1,totalVolume:640000 },
+  ],
+  buyers: [
+    { id:"b1",name:"Textile World GmbH",type:"foreign",country:"Germany",contact:"Hans Mueller",email:"hans@twgermany.de",phone:"+49 89 1234567",referCode:"HANS",referredBy:null,totalOrders:4,totalSpend:18500000,discountEarned:0,status:"active" },
+    { id:"b2",name:"Fabric House UAE",type:"foreign",country:"UAE",contact:"Khalid Al Rashid",email:"khalid@fhuae.com",phone:"+971 50 9876543",referCode:"KHALID",referredBy:"b1",totalOrders:2,totalSpend:7200000,discountEarned:5,status:"active" },
+    { id:"b3",name:"Vijay Wholesale",type:"local",country:"India",contact:"Vijay Sharma",email:"vijay@vws.in",phone:"+91 98765 11223",referCode:"VIJAY",referredBy:"b2",totalOrders:3,totalSpend:3400000,discountEarned:0,status:"active" },
+    { id:"b4",name:"Nordic Apparel AB",type:"foreign",country:"Sweden",contact:"Erik Lindqvist",email:"erik@nordic.se",phone:"+46 70 1234567",referCode:"ERIK",referredBy:"b3",totalOrders:1,totalSpend:3100000,discountEarned:0,status:"pending" },
+  ],
+  orders: [
+    { id:"o1",localId:"l1",buyerId:"b1",agentId:"ag1",product:"T-shirts",qty:5000,pricePerPiece:180,totalCost:900000,salePrice:1100000,profit:200000,commission:20000,referCode:"HANS",buyerDiscount:0,stage:"completed",date:"2026-02-10",invoiceNo:"TL-2026-001" },
+    { id:"o2",localId:"l2",buyerId:"b2",agentId:"ag1",product:"Sarees",qty:200,pricePerPiece:850,totalCost:170000,salePrice:240000,profit:70000,commission:7000,referCode:"KHALID",buyerDiscount:5,stage:"active",date:"2026-03-28",invoiceNo:"TL-2026-002" },
+    { id:"o3",localId:"l1",buyerId:"b3",agentId:"ag1",product:"Polo shirts",qty:2000,pricePerPiece:190,totalCost:380000,salePrice:520000,profit:140000,commission:14000,referCode:"VIJAY",buyerDiscount:0,stage:"production",date:"2026-04-01",invoiceNo:"TL-2026-003" },
+    { id:"o4",localId:"l3",buyerId:"b4",agentId:"ag2",product:"Knitwear",qty:300,pricePerPiece:320,totalCost:96000,salePrice:145000,profit:49000,commission:4900,referCode:"ERIK",buyerDiscount:0,stage:"negotiation",date:"2026-04-10",invoiceNo:"TL-2026-004" },
+  ],
+  agents: [
+    { id:"ag1",name:"Thaliava",code:"THALIAVA",phone:"+91 98765 43210",email:"thaliava@tl.com",region:"Chennai / Tirupur",joined:"2026-01-10",totalEarned:41000,pendingPayout:21000,commissionPct:10,status:"active" },
+    { id:"ag2",name:"Rajan K",code:"RAJAN22",phone:"+91 97654 32109",email:"rajan@tl.com",region:"Coimbatore",joined:"2026-03-01",totalEarned:4900,pendingPayout:4900,commissionPct:10,status:"active" },
+  ],
+  workers: [
+    { id:"w1",name:"Priya R",email:"priya@tl.com",role:"Operations" },
+    { id:"w2",name:"Arun M",email:"arun@tl.com",role:"Sales Coordinator" },
+  ],
+};
+
+const USERS = [
+  { id:"admin1",role:"admin",name:"TL Admin",email:"admin@tltextiles.com",pass:"admin123" },
+  { id:"ag1",role:"agent",name:"Thaliava",email:"thaliava@tl.com",pass:"agent123" },
+  { id:"ag2",role:"agent",name:"Rajan K",email:"rajan@tl.com",pass:"agent456" },
+  { id:"w1",role:"worker",name:"Priya R",email:"priya@tl.com",pass:"worker123" },
+];
+
+// ── UTILS ─────────────────────────────────────────────────────────────────────
+const fmt = n => "₹" + Number(n).toLocaleString("en-IN");
+const SC = s=>({completed:"#22c55e",active:"#f59e0b",pending:"#94a3b8",production:"#3b82f6",negotiation:"#a78bfa",shipping:"#06b6d4",inactive:"#ef4444"}[s]||"#94a3b8");
+const SB = s=>({completed:"#052e16",active:"#3d2000",pending:"#1e293b",production:"#0c1830",negotiation:"#1e1b4b",shipping:"#0c1a2e",inactive:"#2d0a0a"}[s]||"#1e293b");
+const STAGE_NEXT = { negotiation:"Finalise price & quantities", production:"Monitor manufacturing", active:"Confirm delivery schedule", shipping:"Coordinate freight & docs", completed:"Settled" };
+
+function load(key, fallback) {
+  try { const v = localStorage.getItem(key); return v ? JSON.parse(v) : fallback; } catch { return fallback; }
+}
+function save(key, val) {
+  try { localStorage.setItem(key, JSON.stringify(val)); } catch {}
+}
+
+const G = ({ n, s=16 }) => {
+  const d = { home:"M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z", users:"M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2 M23 21v-2a4 4 0 00-3-3.87 M16 3.13a4 4 0 010 7.75", handshake:"M6 9l6 3 6-3 M12 3l9 5v8l-9 5-9-5V8z", pkg:"M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z", trend:"M23 6l-9.5 9.5-5-5L1 18", rupee:"M6 3h12 M6 8h12 M15 3a4 4 0 010 8 M6 21l7-13", plus:"M12 5v14M5 12h14", logout:"M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4 M16 17l5-5-5-5 M21 12H9", menu:"M3 12h18M3 6h18M3 18h18", back:"M19 12H5 M12 19l-7-7 7-7", tag:"M20.59 13.41l-7.17 7.17a2 2 0 01-2.83 0L2 12V2h10l8.59 8.59a2 2 0 010 2.82z", eye:"M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z M12 9a3 3 0 100 6 3 3 0 000-6z", globe:"M12 2a10 10 0 100 20A10 10 0 0012 2z M2 12h20 M12 2a15 15 0 014 10 15 15 0 01-4 10", edit:"M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7 M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z", save2:"M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v14a2 2 0 01-2 2z M17 21v-8H7v8 M7 3v5h8" };
+  return <svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">{(d[n]||"").split(" M").map((p,i)=><path key={i} d={i===0?p:"M"+p}/>)}</svg>;
+};
+
+const CSS=`
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,500&family=DM+Mono:wght@300;400&display=swap');
+*{box-sizing:border-box;margin:0;padding:0;}
+::-webkit-scrollbar{width:4px}::-webkit-scrollbar-track{background:#080806}::-webkit-scrollbar-thumb{background:#2a2410}
+.ni{display:flex;align-items:center;gap:9px;padding:8px 12px;cursor:pointer;transition:all .15s;border-radius:3px;font-family:'DM Mono',monospace;font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:#5a5040;margin-bottom:2px;}
+.ni:hover{background:rgba(201,168,76,.07);color:#a09070;}.ni.on{background:rgba(201,168,76,.12);color:#c9a84c;}
+.card{background:#0f0e0a;border:1px solid #1e1c14;padding:20px;}
+.kpi{background:#0f0e0a;border:1px solid #1e1c14;padding:16px 20px;}
+.kl{font-family:'DM Mono',monospace;font-size:8px;letter-spacing:.2em;text-transform:uppercase;color:#4a4030;margin-bottom:6px;}
+.kv{font-family:'Cormorant Garamond',serif;font-size:28px;font-weight:300;line-height:1;}
+.ks{font-family:'DM Mono',monospace;font-size:7.5px;color:#3a3020;margin-top:4px;letter-spacing:.1em;}
+.th{font-family:'DM Mono',monospace;font-size:8px;letter-spacing:.16em;text-transform:uppercase;color:#3a3020;padding:8px 12px;border-bottom:1px solid #2a2410;display:grid;}
+.tr{padding:10px 12px;border-bottom:1px solid #141210;display:grid;align-items:center;transition:background .1s;font-size:13px;}
+.tr:hover{background:rgba(201,168,76,.03);}
+.sh{font-family:'DM Mono',monospace;font-size:8.5px;letter-spacing:.2em;text-transform:uppercase;color:#c9a84c;margin-bottom:12px;padding-bottom:8px;border-bottom:1px solid #1e1c14;}
+.badge{display:inline-block;padding:2px 8px;font-family:'DM Mono',monospace;font-size:8px;letter-spacing:.1em;text-transform:uppercase;border-radius:2px;}
+.inp{width:100%;background:#141210;border:1px solid #252015;color:#e8e0cc;padding:8px 11px;font-size:13px;font-family:'Cormorant Garamond',serif;outline:none;transition:border .2s;}
+.inp:focus{border-color:#c9a84c50;} .inp::placeholder{color:#2a2010;}
+textarea.inp{resize:vertical;min-height:64px;}
+.lbl{font-family:'DM Mono',monospace;font-size:8px;letter-spacing:.16em;text-transform:uppercase;color:#5a5040;margin-bottom:5px;display:block;}
+.btn-g{font-family:'DM Mono',monospace;font-size:9.5px;letter-spacing:.12em;text-transform:uppercase;padding:8px 20px;background:#c9a84c;color:#0a0a0a;border:none;cursor:pointer;transition:all .2s;}
+.btn-g:hover{background:#dfc068;}
+.btn-o{font-family:'DM Mono',monospace;font-size:9.5px;letter-spacing:.12em;text-transform:uppercase;padding:7px 16px;background:rgba(201,168,76,.08);border:1px solid rgba(201,168,76,.22);color:#c9a84c;cursor:pointer;display:inline-flex;align-items:center;gap:5px;transition:all .2s;}
+.btn-o:hover{background:rgba(201,168,76,.15);}
+.tab-row{display:flex;gap:0;margin-bottom:18px;border-bottom:1px solid #1a1810;}
+.tab{font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.14em;text-transform:uppercase;padding:7px 14px;cursor:pointer;color:#4a4030;border-bottom:2px solid transparent;margin-bottom:-1px;transition:all .2s;}
+.tab.on{color:#c9a84c;border-bottom-color:#c9a84c;} .tab:hover{color:#7a6e5a;}
+.vp-row{display:grid;grid-template-columns:200px 1fr;gap:0;border-bottom:1px solid #1a1810;align-items:start;}
+.vp-row:last-child{border-bottom:none;}
+.vp-key{font-family:'DM Mono',monospace;font-size:8.5px;letter-spacing:.12em;text-transform:uppercase;color:#5a5040;padding:12px 14px;background:#0a0908;border-right:1px solid #1a1810;}
+.vp-val{padding:8px 10px;}
+.tog{width:40px;height:22px;border-radius:11px;border:none;cursor:pointer;position:relative;transition:background .2s;flex-shrink:0;}
+.tog::after{content:'';position:absolute;width:16px;height:16px;border-radius:50%;background:#fff;top:3px;transition:left .2s;}
+`;
+
+// ── MAIN APP ──────────────────────────────────────────────────────────────────
+function App() {
+  const [screen, setScreen] = useState("pub");
+  const [user, setUser] = useState(null);
+  const [data, setDataRaw] = useState(() => load("tl_data", SEED_DATA));
+  const [visitor, setVisitorRaw] = useState(() => load("tl_visitor", DEFAULT_VISITOR));
+  const [tab, setTab] = useState("overview");
+  const [mob, setMob] = useState(false);
+  const [lf, setLf] = useState({ email:"", pass:"", err:"" });
+
+  const setData = v => { setDataRaw(v); save("tl_data", typeof v === "function" ? v(data) : v); };
+  const updateData = fn => { setDataRaw(prev => { const next = fn(prev); save("tl_data", next); return next; }); };
+  const setVisitor = v => { setVisitorRaw(v); save("tl_visitor", typeof v === "function" ? v(visitor) : v); };
+  const updateVisitor = fn => { setVisitorRaw(prev => { const next = fn(prev); save("tl_visitor", next); return next; }); };
+
+  const doLogin = () => {
+    const u = USERS.find(x => x.email === lf.email && x.pass === lf.pass);
+    if (u) { setUser(u); setScreen("dash"); setTab("overview"); }
+    else setLf(f => ({ ...f, err: "Invalid email or password" }));
+  };
+
+  return (
+    <>
+      <style>{CSS}</style>
+      {screen === "pub" && <PubSite vp={visitor} onLogin={() => setScreen("login")} />}
+      {screen === "login" && <LoginPage lf={lf} setLf={setLf} onLogin={doLogin} onBack={() => setScreen("pub")} />}
+      {screen === "dash" && <Dash user={user} data={data} updateData={updateData} visitor={visitor} updateVisitor={updateVisitor} tab={tab} setTab={setTab} mob={mob} setMob={setMob} onLogout={() => { setUser(null); setScreen("pub"); }} />}
+    </>
+  );
+}
+
+// ── PUBLIC SITE ───────────────────────────────────────────────────────────────
+function PubSite({ vp, onLogin }) {
+  const [scrolled, setScrolled] = useState(false);
+  useEffect(() => { const f = () => setScrolled(window.scrollY > 40); window.addEventListener("scroll", f); return () => window.removeEventListener("scroll", f); }, []);
+
+  return (
+    <div style={{ background:"#080806", color:"#f0ead8", minHeight:"100vh" }}>
+      {/* NAV */}
+      <nav style={{ position:"fixed",top:0,left:0,right:0,zIndex:100,padding:scrolled?"13px 40px":"20px 40px",display:"flex",justifyContent:"space-between",alignItems:"center",background:scrolled?"rgba(8,8,6,.96)":"transparent",borderBottom:scrolled?"1px solid #1a1810":"none",backdropFilter:scrolled?"blur(12px)":"none",transition:"all .3s" }}>
+        <div style={{ fontFamily:"'Cormorant Garamond',serif",fontSize:21,fontWeight:300,color:"#c9a84c",letterSpacing:".1em" }}><em>TL</em> Textiles</div>
+        <button className="btn-o" onClick={onLogin}>Login</button>
+      </nav>
+
+      {/* REGISTRATION BANNER */}
+      {vp.showRegistrationBanner && (
+        <div style={{ background:"#1a1200",borderBottom:"1px solid #3a2800",padding:"10px 40px",textAlign:"center",fontFamily:"'DM Mono',monospace",fontSize:10,letterSpacing:".14em",color:"#c9a84c",paddingTop:68 }}>
+          {vp.registrationNotice}
+        </div>
+      )}
+
+      {/* HERO */}
+      <div style={{ minHeight:"100vh",display:"flex",flexDirection:"column",justifyContent:"center",padding:`${vp.showRegistrationBanner?"100px":"110px"} 40px 70px`,position:"relative",overflow:"hidden" }}>
+        <div style={{ position:"absolute",inset:0,background:"radial-gradient(ellipse at 15% 60%,rgba(201,168,76,.05) 0%,transparent 55%),radial-gradient(ellipse at 85% 20%,rgba(139,58,42,.04) 0%,transparent 50%)" }} />
+        <div style={{ position:"absolute",inset:0,backgroundImage:"linear-gradient(rgba(201,168,76,.022) 1px,transparent 1px),linear-gradient(90deg,rgba(201,168,76,.022) 1px,transparent 1px)",backgroundSize:"54px 54px" }} />
+        <div style={{ position:"relative",zIndex:1,maxWidth:860 }}>
+          <div style={{ fontFamily:"'DM Mono',monospace",fontSize:9.5,letterSpacing:".25em",textTransform:"uppercase",color:"#c9a84c",marginBottom:22 }}>Garment Trading &amp; Export — Est. 2026</div>
+          <h1 style={{ fontFamily:"'Cormorant Garamond',serif",fontSize:"clamp(48px,8vw,92px)",fontWeight:300,lineHeight:.95,marginBottom:26 }}>
+            {vp.heroTitle}<br /><em style={{ color:"#c9a84c" }}>{vp.heroTitleItalic}</em>
+          </h1>
+          <p style={{ fontSize:16.5,color:"#6a5e4a",maxWidth:440,lineHeight:1.8,marginBottom:38 }}>{vp.heroSubtitle}</p>
+          <div style={{ display:"flex",gap:12,flexWrap:"wrap" }}>
+            <button className="btn-g" onClick={() => document.getElementById("contact")?.scrollIntoView({ behavior:"smooth" })}>Enquire Now</button>
+            <button className="btn-o" onClick={() => document.getElementById("how")?.scrollIntoView({ behavior:"smooth" })}>How It Works</button>
+          </div>
+        </div>
+      </div>
+
+      {/* STATS */}
+      <div style={{ display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(150px,1fr))",borderTop:"1px solid #1a1810",borderBottom:"1px solid #1a1810" }}>
+        {[[vp.stat1Val,vp.stat1Label],[vp.stat2Val,vp.stat2Label],[vp.stat3Val,vp.stat3Label],[vp.stat4Val,vp.stat4Label]].map(([v,l],i) => (
+          <div key={i} style={{ padding:"26px 32px",borderRight:"1px solid #1a1810" }}>
+            <div style={{ fontFamily:"'Cormorant Garamond',serif",fontSize:36,fontWeight:300,color:"#c9a84c",lineHeight:1 }}>{v}</div>
+            <div style={{ fontFamily:"'DM Mono',monospace",fontSize:8.5,letterSpacing:".18em",textTransform:"uppercase",color:"#3a3020",marginTop:7 }}>{l}</div>
+          </div>
+        ))}
+      </div>
+
+      {/* HOW IT WORKS */}
+      <div id="how" style={{ padding:"80px 40px" }}>
+        <div style={{ fontFamily:"'DM Mono',monospace",fontSize:9,letterSpacing:".22em",textTransform:"uppercase",color:"#c9a84c",marginBottom:10 }}>How It Works</div>
+        <h2 style={{ fontFamily:"'Cormorant Garamond',serif",fontSize:"clamp(28px,4vw,48px)",fontWeight:300,marginBottom:40 }}>Simple, Direct, Rewarding</h2>
+        <div style={{ display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(230px,1fr))",gap:1,background:"#1a1810" }}>
+          {[[vp.how1Title,vp.how1Desc],[vp.how2Title,vp.how2Desc],[vp.how3Title,vp.how3Desc],[vp.how4Title,vp.how4Desc]].map(([t,d],i) => (
+            <div key={i} style={{ background:"#080806",padding:"32px 28px" }}>
+              <div style={{ fontFamily:"'Cormorant Garamond',serif",fontSize:50,fontWeight:300,color:"#1e1c14",lineHeight:1,marginBottom:12 }}>0{i+1}</div>
+              <div style={{ fontSize:18,marginBottom:10,color:"#e8e0cc" }}>{t}</div>
+              <div style={{ fontSize:13.5,color:"#4a4030",lineHeight:1.8 }}>{d}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* BECOME AN AGENT CTA */}
+      <div style={{ padding:"0 40px 80px" }}>
+        <div style={{ background:"#0f0e0a",border:"1px solid #c9a84c25",padding:"44px 40px",display:"grid",gridTemplateColumns:"1fr auto",gap:32,alignItems:"center",flexWrap:"wrap" }}>
+          <div>
+            <div style={{ fontFamily:"'DM Mono',monospace",fontSize:9,letterSpacing:".2em",textTransform:"uppercase",color:"#c9a84c",marginBottom:12 }}>Join Our Network</div>
+            <h3 style={{ fontFamily:"'Cormorant Garamond',serif",fontSize:"clamp(22px,3vw,34px)",fontWeight:300,marginBottom:12 }}>{vp.agentCTATitle}</h3>
+            <p style={{ fontSize:15,color:"#6a5e4a",lineHeight:1.8,maxWidth:520 }}>{vp.agentCTADesc}</p>
+          </div>
+          <button className="btn-g" style={{ whiteSpace:"nowrap",padding:"13px 28px",fontSize:11 }} onClick={() => document.getElementById("contact")?.scrollIntoView({ behavior:"smooth" })}>{vp.agentCTAButton} →</button>
+        </div>
+      </div>
+
+      {/* CONTACT */}
+      <div id="contact" style={{ background:"#050503",padding:"70px 40px",borderTop:"1px solid #1a1810" }}>
+        <div style={{ fontFamily:"'DM Mono',monospace",fontSize:9,letterSpacing:".22em",textTransform:"uppercase",color:"#c9a84c",marginBottom:10 }}>Contact</div>
+        <h2 style={{ fontFamily:"'Cormorant Garamond',serif",fontSize:"clamp(26px,4vw,44px)",fontWeight:300,marginBottom:28 }}>Let's Work Together</h2>
+        <div style={{ display:"flex",gap:10,flexWrap:"wrap",marginBottom:28 }}>
+          {[["Email",vp.contactEmail],["Phone",vp.contactPhone],["Location",vp.contactLocation]].map(([l,v]) => (
+            <div key={l} style={{ background:"#0a0a08",border:"1px solid #1a1810",padding:"14px 20px" }}>
+              <div style={{ fontFamily:"'DM Mono',monospace",fontSize:7.5,letterSpacing:".18em",textTransform:"uppercase",color:"#3a3020",marginBottom:5 }}>{l}</div>
+              <div style={{ fontSize:13.5 }}>{v}</div>
+            </div>
+          ))}
+        </div>
+        <button className="btn-g" onClick={onLogin}>Login →</button>
+      </div>
+
+      <div style={{ padding:"24px 40px",borderTop:"1px solid #1a1810",display:"flex",justifyContent:"space-between",alignItems:"center",flexWrap:"wrap",gap:10 }}>
+        <div style={{ fontFamily:"'DM Mono',monospace",fontSize:8.5,letterSpacing:".12em",textTransform:"uppercase",color:"#2a2010" }}>© 2026 TL Textiles</div>
+        <div style={{ fontFamily:"'Cormorant Garamond',serif",fontStyle:"italic",color:"#c9a84c",fontSize:17 }}>TL Textiles</div>
+        <div style={{ fontFamily:"'DM Mono',monospace",fontSize:8.5,letterSpacing:".12em",textTransform:"uppercase",color:"#2a2010" }}>{vp.footerText}</div>
+      </div>
+    </div>
+  );
+}
+
+// ── LOGIN ─────────────────────────────────────────────────────────────────────
+function LoginPage({ lf, setLf, onLogin, onBack }) {
+  return (
+    <div style={{ minHeight:"100vh",background:"#080806",display:"flex",alignItems:"center",justifyContent:"center" }}>
+      <div style={{ width:"100%",maxWidth:390,padding:"0 22px" }}>
+        <div style={{ textAlign:"center",marginBottom:36 }}>
+          <div style={{ fontFamily:"'Cormorant Garamond',serif",fontSize:24,fontWeight:300,color:"#c9a84c",letterSpacing:".1em" }}><em>TL</em> Textiles</div>
+          <div style={{ fontFamily:"'DM Mono',monospace",fontSize:8,letterSpacing:".2em",textTransform:"uppercase",color:"#2a2010",marginTop:6 }}>Partner Portal</div>
+        </div>
+        <div className="card" style={{ padding:"32px 28px" }}>
+          <div style={{ marginBottom:16 }}><label className="lbl">Email</label><input className="inp" value={lf.email} onChange={e => setLf(f => ({ ...f,email:e.target.value }))} onKeyDown={e => e.key==="Enter"&&onLogin()} placeholder="you@email.com" /></div>
+          <div style={{ marginBottom:24 }}><label className="lbl">Password</label><input type="password" className="inp" value={lf.pass} onChange={e => setLf(f => ({ ...f,pass:e.target.value }))} onKeyDown={e => e.key==="Enter"&&onLogin()} placeholder="••••••••" /></div>
+          {lf.err && <div style={{ color:"#ef4444",fontFamily:"'DM Mono',monospace",fontSize:9.5,marginBottom:12 }}>{lf.err}</div>}
+          <button className="btn-g" style={{ width:"100%" }} onClick={onLogin}>Sign In</button>
+        </div>
+        <div style={{ textAlign:"center",marginTop:12,fontFamily:"'DM Mono',monospace",fontSize:8.5,color:"#2a2010",letterSpacing:".1em" }}>Demo: admin@tltextiles.com / admin123</div>
+        <button onClick={onBack} style={{ display:"block",margin:"14px auto 0",background:"none",border:"none",color:"#4a4030",cursor:"pointer",fontFamily:"'DM Mono',monospace",fontSize:9,letterSpacing:".12em",textTransform:"uppercase" }}>← Back to Website</button>
+      </div>
+    </div>
+  );
+}
+
+// ── DASHBOARD ─────────────────────────────────────────────────────────────────
+function Dash({ user, data, updateData, visitor, updateVisitor, tab, setTab, mob, setMob, onLogout }) {
+  const isMob = typeof window !== "undefined" && window.innerWidth < 768;
+  const NAV = {
+    admin: [["overview","Overview","home"],["locals","Manufacturer Deals","handshake"],["buyers","Buyers","users"],["orders","Orders","pkg"],["agents","Agents","tag"],["workers","Workers","users"],["payouts","Payouts","rupee"],["visitorpage","Visitor Page","globe"]],
+    agent: [["overview","Overview","home"],["mylocals","My Manufacturer Deals","handshake"],["myorders","My Orders","pkg"],["myearnings","My Earnings","trend"]],
+    worker: [["overview","Overview","home"],["orders","Orders","pkg"],["buyers","Buyers","users"]],
+  };
+  const nav = NAV[user.role] || NAV.admin;
+  const RC = { admin:"#c9a84c", agent:"#22c55e", worker:"#3b82f6" };
+  const label = nav.find(x => x[0]===tab)?.[1] || "Dashboard";
+
+  const SB2 = ({ close }) => (
+    <>
+      <div style={{ marginBottom:20,paddingBottom:16,borderBottom:"1px solid #141210" }}>
+        <div style={{ fontFamily:"'Cormorant Garamond',serif",fontSize:18,fontWeight:300,color:"#c9a84c",letterSpacing:".08em" }}><em>TL</em> Textiles</div>
+        <div style={{ fontFamily:"'DM Mono',monospace",fontSize:7,letterSpacing:".2em",textTransform:"uppercase",color:"#1a1010",marginTop:3 }}>Partner Portal</div>
+      </div>
+      <div style={{ flex:1 }}>
+        {nav.map(([k,l,ic]) => (
+          <div key={k} className={`ni${tab===k?" on":""}`} onClick={() => { setTab(k); close&&close(); }}>
+            <G n={ic} s={13} />{l}
+          </div>
+        ))}
+      </div>
+      <div style={{ paddingTop:14,borderTop:"1px solid #141210",marginTop:"auto" }}>
+        <div className="ni" onClick={onLogout}><G n="logout" s={13} />Logout</div>
+      </div>
+    </>
+  );
+
+  return (
+    <div style={{ display:"flex",height:"100vh",background:"#080806",color:"#e8e0cc",overflow:"hidden" }}>
+      {!isMob && <div style={{ width:210,borderRight:"1px solid #141210",padding:"18px 10px",display:"flex",flexDirection:"column",flexShrink:0,overflowY:"auto" }}><SB2 /></div>}
+      {isMob && mob && <div style={{ position:"fixed",inset:0,background:"rgba(0,0,0,.75)",zIndex:40 }} onClick={() => setMob(false)} />}
+      {isMob && <div style={{ position:"fixed",left:0,top:0,bottom:0,width:230,background:"#0a0908",borderRight:"1px solid #1a1810",zIndex:50,padding:"18px 10px",transform:mob?"translateX(0)":"translateX(-100%)",transition:"transform .3s",display:"flex",flexDirection:"column",overflowY:"auto" }}><SB2 close={() => setMob(false)} /></div>}
+
+      <div style={{ flex:1,display:"flex",flexDirection:"column",overflow:"hidden" }}>
+        <div style={{ padding:"13px 20px",borderBottom:"1px solid #141210",display:"flex",justifyContent:"space-between",alignItems:"center",flexShrink:0 }}>
+          <div style={{ display:"flex",alignItems:"center",gap:9 }}>
+            {isMob && <button onClick={() => setMob(true)} style={{ background:"none",border:"none",color:"#c9a84c",cursor:"pointer",padding:3 }}><G n="menu" s={19} /></button>}
+            <div>
+              <div style={{ fontFamily:"'Cormorant Garamond',serif",fontSize:16,fontWeight:400 }}>{label}</div>
+              <div style={{ fontFamily:"'DM Mono',monospace",fontSize:7.5,letterSpacing:".16em",textTransform:"uppercase",color:"#2a2010",marginTop:2 }}>TL Textiles</div>
+            </div>
+          </div>
+          <div style={{ display:"flex",alignItems:"center",gap:9 }}>
+            <div style={{ textAlign:"right" }}>
+              <div style={{ fontSize:12.5,color:"#c9a84c" }}>{user.name}</div>
+              <div style={{ fontFamily:"'DM Mono',monospace",fontSize:7.5,letterSpacing:".14em",textTransform:"uppercase",color:RC[user.role],marginTop:2 }}>{user.role}</div>
+            </div>
+            <div style={{ width:32,height:32,borderRadius:"50%",background:`${RC[user.role]}18`,border:`1px solid ${RC[user.role]}40`,display:"flex",alignItems:"center",justifyContent:"center",color:RC[user.role],fontFamily:"'Cormorant Garamond',serif",fontSize:15,fontWeight:600 }}>{user.name[0]}</div>
+          </div>
+        </div>
+        <div style={{ flex:1,overflowY:"auto",padding:"20px" }}>
+          {tab==="overview"    && <Overview user={user} data={data} />}
+          {tab==="locals"      && <LocalsTab data={data} updateData={updateData} adminView />}
+          {tab==="mylocals"    && <LocalsTab data={data} updateData={updateData} agentId={user.id} />}
+          {tab==="buyers"      && <BuyersTab data={data} updateData={updateData} />}
+          {(tab==="orders"||tab==="myorders") && <OrdersTab data={data} updateData={updateData} agentId={tab==="myorders"?user.id:null} />}
+          {tab==="agents"      && <AgentsTab data={data} />}
+          {tab==="workers"     && <WorkersTab data={data} />}
+          {tab==="payouts"     && <PayoutsTab data={data} updateData={updateData} />}
+          {tab==="myearnings"  && <MyEarnings user={user} data={data} />}
+          {tab==="visitorpage" && <VisitorPageEditor visitor={visitor} updateVisitor={updateVisitor} />}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function Kpi({ l, v, s, c }) { return <div className="kpi"><div className="kl">{l}</div><div className="kv" style={{ color:c }}>{v}</div><div className="ks">{s}</div></div>; }
+
+// ── OVERVIEW ──────────────────────────────────────────────────────────────────
+function Overview({ user, data }) {
+  const tv = data.orders.reduce((s,o) => s+o.salePrice, 0);
+  const tp = data.orders.reduce((s,o) => s+o.profit, 0);
+  const tc = data.orders.reduce((s,o) => s+o.commission, 0);
+  const ao = data.orders.filter(o => o.stage!=="completed").length;
+
+  if (user.role==="agent") {
+    const ag = data.agents.find(a => a.id===user.id);
+    const ml = data.locals.filter(l => l.agentId===user.id);
+    const mo = data.orders.filter(o => o.agentId===user.id);
+    return (<div>
+      <div style={{ display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(130px,1fr))",gap:9,marginBottom:20 }}>
+        <Kpi l="Total Earned" v={fmt(ag?.totalEarned||0)} s="from manufacturers" c="#22c55e" />
+        <Kpi l="Pending Payout" v={fmt(ag?.pendingPayout||0)} s="awaiting" c="#f59e0b" />
+        <Kpi l="Manufacturer Deals" v={ml.length} s="logged" c="#c9a84c" />
+        <Kpi l="My Orders" v={mo.length} s="total" c="#3b82f6" />
+      </div>
+      <div className="sh">My Recent Orders</div>
+      {mo.slice(-4).reverse().map(o => { const b = data.buyers.find(x => x.id===o.buyerId); return (<div key={o.id} style={{ display:"flex",justifyContent:"space-between",alignItems:"center",padding:"9px 12px",background:"#0f0e0a",border:"1px solid #141210",marginBottom:4 }}><div><span style={{ fontSize:13 }}>{b?.name}</span><span style={{ fontFamily:"'DM Mono',monospace",fontSize:8,color:"#3a3020",marginLeft:9 }}>{o.date}</span></div><div style={{ display:"flex",gap:9,alignItems:"center" }}><span style={{ fontFamily:"'Cormorant Garamond',serif",fontSize:15,color:"#c9a84c" }}>{fmt(o.salePrice)}</span><span className="badge" style={{ background:SB(o.stage),color:SC(o.stage) }}>{o.stage}</span></div></div>); })}
+    </div>);
+  }
+
+  return (<div>
+    <div style={{ display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(130px,1fr))",gap:9,marginBottom:22 }}>
+      <Kpi l="Total Volume" v={fmt(tv)} s="all orders" c="#c9a84c" />
+      <Kpi l="Total Profit" v={fmt(tp)} s="net margin" c="#22c55e" />
+      <Kpi l="Commission Owed" v={fmt(tc)} s="to agents" c="#f59e0b" />
+      <Kpi l="Active Orders" v={ao} s="in pipeline" c="#3b82f6" />
+      <Kpi l="Manufacturers" v={data.locals.length} s="deals made" c="#a78bfa" />
+      <Kpi l="Buyers" v={data.buyers.length} s="total" c="#06b6d4" />
+    </div>
+    <div className="sh">Active Pipeline</div>
+    {data.orders.filter(o => o.stage!=="completed").map(o => { const b = data.buyers.find(x => x.id===o.buyerId); const l = data.locals.find(x => x.id===o.localId); return (<div key={o.id} style={{ background:"#0f0e0a",border:"1px solid #1a1810",padding:"11px 14px",marginBottom:7,display:"grid",gridTemplateColumns:"1fr 1fr auto",gap:9,alignItems:"center" }}><div><div style={{ fontSize:13,marginBottom:2 }}>{o.product} × {o.qty?.toLocaleString()}</div><div style={{ fontFamily:"'DM Mono',monospace",fontSize:8,color:"#3a3020",textTransform:"uppercase",letterSpacing:".1em" }}>{b?.name} · {l?.businessName}</div></div><div style={{ fontFamily:"'DM Mono',monospace",fontSize:9.5,color:"#f59e0b" }}>→ {STAGE_NEXT[o.stage]}</div><span className="badge" style={{ background:SB(o.stage),color:SC(o.stage) }}>{o.stage}</span></div>); })}
+    <div className="sh" style={{ marginTop:20 }}>Recent Orders</div>
+    {data.orders.slice(-4).reverse().map(o => { const b = data.buyers.find(x => x.id===o.buyerId); return (<div key={o.id} style={{ display:"flex",justifyContent:"space-between",alignItems:"center",padding:"9px 12px",background:"#0f0e0a",border:"1px solid #141210",marginBottom:4 }}><div><span style={{ fontSize:13 }}>{b?.name}</span><span style={{ fontFamily:"'DM Mono',monospace",fontSize:8,color:"#3a3020",marginLeft:9 }}>{o.date}</span></div><div style={{ display:"flex",gap:9,alignItems:"center" }}><span style={{ fontFamily:"'Cormorant Garamond',serif",fontSize:15,color:"#c9a84c" }}>{fmt(o.salePrice)}</span><span className="badge" style={{ background:SB(o.stage),color:SC(o.stage) }}>{o.stage}</span></div></div>); })}
+  </div>);
+}
+
+// ── LOCALS ────────────────────────────────────────────────────────────────────
+function LocalsTab({ data, updateData, adminView, agentId }) {
+  const [show, setShow] = useState(false);
+  const [sel, setSel] = useState(null);
+  const [ft, setFt] = useState("pub");
+  const blank = { businessName:"",ownerName:"",city:"",state:"Tamil Nadu",pincode:"",phone:"",email:"",gst:"",address:"",products:"",pricePerPiece:"",minOrder:"",dealDate:new Date().toISOString().split("T")[0],commissionPct:10,agentCode:"",bankName:"",accountNo:"",ifsc:"",notes:"" };
+  const [form, setForm] = useState(blank);
+  const locals = adminView ? data.locals : data.locals.filter(l => l.agentId===agentId);
+
+  const doSave = () => {
+    if (!form.businessName) return;
+    updateData(d => ({ ...d, locals:[...d.locals,{ ...form,id:"l"+Date.now(),agentId:agentId||"admin",status:"active",totalOrdersPlaced:0,totalVolume:0,pricePerPiece:+form.pricePerPiece,minOrder:+form.minOrder,commissionPct:+form.commissionPct }] }));
+    setShow(false); setForm(blank);
+  };
+
+  if (sel) return <LocalDetail local={sel} data={data} onBack={() => setSel(null)} />;
+
+  return (<div>
+    <div style={{ display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:16 }}>
+      <div className="sh" style={{ margin:0 }}>Manufacturer Deals ({locals.length})</div>
+      <button className="btn-o" onClick={() => setShow(!show)}><G n="plus" s={11} />Log New Deal</button>
+    </div>
+    {show && <div className="card" style={{ marginBottom:18,borderColor:"#c9a84c25" }}>
+      <div className="tab-row">
+        {[["pub","Public Info"],["deal","Deal Terms"],["priv","Private / Banking"]].map(([k,l]) => <div key={k} className={`tab${ft===k?" on":""}`} onClick={() => setFt(k)}>{l}</div>)}
+      </div>
+      {ft==="pub" && <div style={{ display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(185px,1fr))",gap:10 }}>
+        {[["businessName","Business Name"],["ownerName","Owner Name"],["phone","Phone"],["email","Email"],["city","City"],["state","State"],["pincode","Pincode"],["gst","GST Number"]].map(([k,l]) => <div key={k}><label className="lbl">{l}</label><input className="inp" value={form[k]} onChange={e => setForm(f => ({ ...f,[k]:e.target.value }))} /></div>)}
+        <div style={{ gridColumn:"1/-1" }}><label className="lbl">Full Address</label><input className="inp" value={form.address} onChange={e => setForm(f => ({ ...f,address:e.target.value }))} /></div>
+      </div>}
+      {ft==="deal" && <div style={{ display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(175px,1fr))",gap:10 }}>
+        {[["products","Products / Categories"],["pricePerPiece","Price Per Piece (₹)"],["minOrder","Min Order Qty"],["dealDate","Deal Date"],["commissionPct","Commission % (they pay you)"],["agentCode","Your Agent Code"]].map(([k,l]) => <div key={k}><label className="lbl">{l}</label><input className="inp" value={form[k]} type={k==="dealDate"?"date":["pricePerPiece","minOrder","commissionPct"].includes(k)?"number":"text"} onChange={e => setForm(f => ({ ...f,[k]:e.target.value }))} /></div>)}
+      </div>}
+      {ft==="priv" && <div style={{ display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(175px,1fr))",gap:10 }}>
+        {[["bankName","Bank Name"],["accountNo","Account Number"],["ifsc","IFSC Code"]].map(([k,l]) => <div key={k}><label className="lbl">{l}</label><input className="inp" value={form[k]} onChange={e => setForm(f => ({ ...f,[k]:e.target.value }))} /></div>)}
+        <div style={{ gridColumn:"1/-1" }}><label className="lbl">Notes (private)</label><textarea className="inp" value={form.notes} onChange={e => setForm(f => ({ ...f,notes:e.target.value }))} /></div>
+      </div>}
+      <div style={{ marginTop:14,display:"flex",gap:9 }}><button className="btn-g" onClick={doSave}>Save Deal</button><button className="btn-o" onClick={() => setShow(false)}>Cancel</button></div>
+    </div>}
+    <div style={{ display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(265px,1fr))",gap:10 }}>
+      {locals.map(l => (
+        <div key={l.id} className="card" style={{ cursor:"pointer" }} onClick={() => setSel(l)}>
+          <div style={{ display:"flex",justifyContent:"space-between",marginBottom:11 }}>
+            <div><div style={{ fontSize:15,marginBottom:2 }}>{l.businessName}</div><div style={{ fontFamily:"'DM Mono',monospace",fontSize:8,color:"#4a4030",textTransform:"uppercase",letterSpacing:".12em" }}>{l.city}, {l.state}</div></div>
+            <span className="badge" style={{ background:SB(l.status),color:SC(l.status),height:"fit-content" }}>{l.status}</span>
+          </div>
+          <div style={{ display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:7,marginBottom:10 }}>
+            <div><div className="kl">Commission</div><div style={{ fontFamily:"'Cormorant Garamond',serif",fontSize:20,color:"#c9a84c" }}>{l.commissionPct}%</div></div>
+            <div><div className="kl">Price/pc</div><div style={{ fontFamily:"'Cormorant Garamond',serif",fontSize:20 }}>{fmt(l.pricePerPiece)}</div></div>
+            <div><div className="kl">Orders</div><div style={{ fontFamily:"'Cormorant Garamond',serif",fontSize:20,color:"#22c55e" }}>{l.totalOrdersPlaced}</div></div>
+          </div>
+          <div style={{ display:"flex",justifyContent:"space-between",paddingTop:9,borderTop:"1px solid #1a1810" }}>
+            <span style={{ fontFamily:"'DM Mono',monospace",fontSize:9,color:"#c9a84c",letterSpacing:".12em" }}>{l.agentCode}</span>
+            <span style={{ fontFamily:"'DM Mono',monospace",fontSize:8,color:"#2a2010" }}>Deal: {l.dealDate}</span>
+          </div>
+        </div>
+      ))}
+    </div>
+  </div>);
+}
+
+function LocalDetail({ local, data, onBack }) {
+  const orders = data.orders.filter(o => o.localId===local.id);
+  const F = ({ label, value, priv }) => (<div style={{ marginBottom:9 }}><div className="lbl">{label}{priv && <span style={{ color:"#ef444450",marginLeft:5,fontSize:"0.9em" }}>private</span>}</div><div style={{ fontSize:13.5,color:priv?"#8a5e4a":"#d8d0bc" }}>{value||"—"}</div></div>);
+  return (<div>
+    <button className="btn-o" style={{ marginBottom:16 }} onClick={onBack}><G n="back" s={12} />Back</button>
+    <div style={{ display:"flex",justifyContent:"space-between",alignItems:"flex-start",flexWrap:"wrap",gap:10,marginBottom:20 }}>
+      <div><h2 style={{ fontFamily:"'Cormorant Garamond',serif",fontSize:26,fontWeight:400 }}>{local.businessName}</h2><div style={{ fontFamily:"'DM Mono',monospace",fontSize:8.5,color:"#4a4030",textTransform:"uppercase",letterSpacing:".14em",marginTop:3 }}>{local.city}, {local.state}</div></div>
+      <span className="badge" style={{ background:SB(local.status),color:SC(local.status),fontSize:10,padding:"4px 12px" }}>{local.status}</span>
+    </div>
+    <div style={{ display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(255px,1fr))",gap:12,marginBottom:20 }}>
+      <div className="card"><div className="sh">Public Info</div><F label="Owner" value={local.ownerName} /><F label="Phone" value={local.phone} /><F label="Email" value={local.email} /><F label="Address" value={local.address} /><F label="GST" value={local.gst} /></div>
+      <div className="card"><div className="sh">Deal Terms</div><F label="Products" value={local.products} /><F label="Price Per Piece" value={fmt(local.pricePerPiece)} /><F label="Min Order" value={local.minOrder+" pcs"} /><F label="Deal Date" value={local.dealDate} /><F label="Commission They Pay" value={local.commissionPct+"%"} /><F label="Agent Code" value={local.agentCode} /></div>
+      <div className="card"><div className="sh">Private / Banking</div><F label="Bank" value={local.bankName} priv /><F label="Account No." value={local.accountNo} priv /><F label="IFSC" value={local.ifsc} priv /><div style={{ marginTop:10,paddingTop:10,borderTop:"1px solid #1a1810" }}><div className="lbl">Notes <span style={{ color:"#ef444450" }}>private</span></div><div style={{ fontSize:13,color:"#6a5e4a",lineHeight:1.8 }}>{local.notes||"—"}</div></div></div>
+    </div>
+    <div className="sh">Orders Through This Manufacturer ({orders.length})</div>
+    {orders.length===0 ? <div style={{ color:"#2a2010",fontFamily:"'DM Mono',monospace",fontSize:9.5 }}>No orders yet.</div> : <>
+      <div className="th" style={{ gridTemplateColumns:"1.5fr 1fr 1fr 1fr 1fr" }}><span>Buyer</span><span>Product</span><span>Sale Price</span><span>Commission</span><span>Stage</span></div>
+      {orders.map(o => { const b = data.buyers.find(x => x.id===o.buyerId); return (<div key={o.id} className="tr" style={{ gridTemplateColumns:"1.5fr 1fr 1fr 1fr 1fr" }}><span>{b?.name}</span><span style={{ color:"#7a6e5a" }}>{o.product}</span><span style={{ fontFamily:"'Cormorant Garamond',serif",fontSize:16,color:"#c9a84c" }}>{fmt(o.salePrice)}</span><span style={{ fontFamily:"'Cormorant Garamond',serif",fontSize:16,color:"#f59e0b" }}>{fmt(o.commission)}</span><span className="badge" style={{ background:SB(o.stage),color:SC(o.stage) }}>{o.stage}</span></div>); })}
+    </>}
+  </div>);
+}
+
+// ── BUYERS ────────────────────────────────────────────────────────────────────
+function BuyersTab({ data, updateData }) {
+  const [show, setShow] = useState(false);
+  const [form, setForm] = useState({ name:"",type:"foreign",country:"",contact:"",email:"",phone:"",referCode:"",referredBy:"" });
+  const doSave = () => {
+    if (!form.name||!form.referCode) return;
+    updateData(d => ({ ...d, buyers:[...d.buyers,{ ...form,id:"b"+Date.now(),totalOrders:0,totalSpend:0,discountEarned:0,status:"active" }] }));
+    setShow(false); setForm({ name:"",type:"foreign",country:"",contact:"",email:"",phone:"",referCode:"",referredBy:"" });
+  };
+  return (<div>
+    <div style={{ display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:16 }}>
+      <div className="sh" style={{ margin:0 }}>Buyers ({data.buyers.length})</div>
+      <button className="btn-o" onClick={() => setShow(!show)}><G n="plus" s={11} />Add Buyer</button>
+    </div>
+    {show && <div className="card" style={{ marginBottom:16,borderColor:"#c9a84c25" }}>
+      <div style={{ display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(175px,1fr))",gap:10,marginBottom:12 }}>
+        {[["name","Buyer / Company Name"],["contact","Contact Person"],["email","Email"],["phone","Phone"],["country","Country"]].map(([k,l]) => <div key={k}><label className="lbl">{l}</label><input className="inp" value={form[k]} onChange={e => setForm(f => ({ ...f,[k]:e.target.value }))} /></div>)}
+        <div><label className="lbl">Their Referral Code Word</label><input className="inp" value={form.referCode} onChange={e => setForm(f => ({ ...f,referCode:e.target.value }))} placeholder="e.g. BABU" /></div>
+        <div><label className="lbl">Type</label><select className="inp" value={form.type} onChange={e => setForm(f => ({ ...f,type:e.target.value }))} style={{ cursor:"pointer" }}><option value="foreign">Foreign</option><option value="local">Local</option></select></div>
+        <div><label className="lbl">Referred By (who sent them)</label><select className="inp" value={form.referredBy} onChange={e => setForm(f => ({ ...f,referredBy:e.target.value }))} style={{ cursor:"pointer" }}><option value="">— None —</option>{data.buyers.map(b => <option key={b.id} value={b.id}>{b.name} ({b.referCode})</option>)}</select></div>
+      </div>
+      <div style={{ display:"flex",gap:9 }}><button className="btn-g" onClick={doSave}>Save Buyer</button><button className="btn-o" onClick={() => setShow(false)}>Cancel</button></div>
+    </div>}
+    <div style={{ overflowX:"auto" }}>
+      <div className="th" style={{ gridTemplateColumns:"1.5fr .6fr .9fr 1.1fr .9fr .9fr .7fr" }}><span>Buyer</span><span>Type</span><span>Ref Code</span><span>Referred By</span><span>Total Spend</span><span>Discount Earned</span><span>Status</span></div>
+      {data.buyers.map(b => { const rb = data.buyers.find(x => x.id===b.referredBy); return (<div key={b.id} className="tr" style={{ gridTemplateColumns:"1.5fr .6fr .9fr 1.1fr .9fr .9fr .7fr" }}><div><div style={{ fontSize:13.5 }}>{b.name}</div><div style={{ fontFamily:"'DM Mono',monospace",fontSize:8,color:"#3a3020",marginTop:2 }}>{b.contact} · {b.country}</div></div><span className="badge" style={{ background:b.type==="foreign"?"#0c1a2e":"#1a1810",color:b.type==="foreign"?"#06b6d4":"#a09070" }}>{b.type}</span><span style={{ fontFamily:"'DM Mono',monospace",fontSize:11,color:"#c9a84c",letterSpacing:".12em" }}>{b.referCode}</span><span style={{ fontSize:12,color:"#6a5e4a" }}>{rb?`${rb.name} (${rb.referCode})`:"—"}</span><span style={{ fontFamily:"'Cormorant Garamond',serif",fontSize:16 }}>{fmt(b.totalSpend)}</span><span style={{ fontFamily:"'Cormorant Garamond',serif",fontSize:16,color:b.discountEarned>0?"#22c55e":"#2a2010" }}>{b.discountEarned>0?`${b.discountEarned}% next`:"—"}</span><span className="badge" style={{ background:SB(b.status),color:SC(b.status) }}>{b.status}</span></div>); })}
+    </div>
+  </div>);
+}
+
+// ── ORDERS ────────────────────────────────────────────────────────────────────
+function OrdersTab({ data, updateData, agentId }) {
+  const [show, setShow] = useState(false);
+  const [form, setForm] = useState({ localId:"",buyerId:"",product:"",qty:"",pricePerPiece:"",salePrice:"",referCode:"",buyerDiscount:"0",stage:"negotiation" });
+  const orders = agentId ? data.orders.filter(o => o.agentId===agentId) : data.orders;
+
+  const doSave = () => {
+    if (!form.localId||!form.buyerId||!form.qty||!form.salePrice) return;
+    const local = data.locals.find(l => l.id===form.localId);
+    const qty=+form.qty, ppp=+form.pricePerPiece||(local?.pricePerPiece||0), sale=+form.salePrice;
+    const cost=qty*ppp, profit=sale-cost, commission=Math.round(profit*(local?.commissionPct||10)/100);
+    updateData(d => ({ ...d, orders:[...d.orders,{ ...form,id:"o"+Date.now(),agentId:local?.agentId||"",qty,pricePerPiece:ppp,totalCost:cost,salePrice:sale,profit,commission,buyerDiscount:+form.buyerDiscount,date:new Date().toISOString().split("T")[0],invoiceNo:"TL-2026-"+String(d.orders.length+1).padStart(3,"0") }] }));
+    setShow(false); setForm({ localId:"",buyerId:"",product:"",qty:"",pricePerPiece:"",salePrice:"",referCode:"",buyerDiscount:"0",stage:"negotiation" });
+  };
+
+  const upStage = (id, stage) => updateData(d => ({ ...d, orders:d.orders.map(o => o.id===id?{ ...o,stage }:o) }));
+
+  const local = data.locals.find(l => l.id===form.localId);
+  const cost = local&&form.qty&&form.pricePerPiece ? +form.qty*(+form.pricePerPiece) : local&&form.qty ? +form.qty*local.pricePerPiece : null;
+  const profit = cost&&form.salePrice ? +form.salePrice-cost : null;
+  const comm = profit!=null&&local ? Math.round(profit*(local.commissionPct||10)/100) : null;
+
+  return (<div>
+    <div style={{ display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:16 }}>
+      <div className="sh" style={{ margin:0 }}>Orders ({orders.length})</div>
+      {!agentId && <button className="btn-o" onClick={() => setShow(!show)}><G n="plus" s={11} />New Order</button>}
+    </div>
+    {show && <div className="card" style={{ marginBottom:16,borderColor:"#c9a84c25" }}>
+      <div style={{ display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(175px,1fr))",gap:10,marginBottom:12 }}>
+        <div><label className="lbl">Manufacturer</label><select className="inp" value={form.localId} onChange={e => setForm(f => ({ ...f,localId:e.target.value }))} style={{ cursor:"pointer" }}><option value="">— Select —</option>{data.locals.map(l => <option key={l.id} value={l.id}>{l.businessName}</option>)}</select></div>
+        <div><label className="lbl">Buyer</label><select className="inp" value={form.buyerId} onChange={e => setForm(f => ({ ...f,buyerId:e.target.value }))} style={{ cursor:"pointer" }}><option value="">— Select —</option>{data.buyers.map(b => <option key={b.id} value={b.id}>{b.name}</option>)}</select></div>
+        {[["product","Product Description"],["qty","Quantity (pcs)"],["pricePerPiece","Buy Price/pc (₹)"],["salePrice","Total Sale Price (₹)"],["referCode","Buyer's Ref Code Mentioned"],["buyerDiscount","Discount Applied to Buyer (%)"]].map(([k,l]) => <div key={k}><label className="lbl">{l}</label><input className="inp" type={["qty","pricePerPiece","salePrice","buyerDiscount"].includes(k)?"number":"text"} value={form[k]} onChange={e => setForm(f => ({ ...f,[k]:e.target.value }))} /></div>)}
+        <div><label className="lbl">Stage</label><select className="inp" value={form.stage} onChange={e => setForm(f => ({ ...f,stage:e.target.value }))} style={{ cursor:"pointer" }}>{["negotiation","production","active","shipping","completed"].map(s => <option key={s} value={s}>{s}</option>)}</select></div>
+      </div>
+      {cost!=null && profit!=null && <div style={{ background:"#141210",border:"1px solid #2a2410",padding:"11px 14px",marginBottom:12,display:"flex",gap:22,flexWrap:"wrap" }}>
+        <div><div className="kl">Buy Cost</div><div style={{ fontFamily:"'Cormorant Garamond',serif",fontSize:18 }}>{fmt(cost)}</div></div>
+        <div><div className="kl">Profit</div><div style={{ fontFamily:"'Cormorant Garamond',serif",fontSize:18,color:"#22c55e" }}>{fmt(profit)}</div></div>
+        <div><div className="kl">Commission Owed</div><div style={{ fontFamily:"'Cormorant Garamond',serif",fontSize:18,color:"#f59e0b" }}>{fmt(comm)}</div></div>
+      </div>}
+      <div style={{ display:"flex",gap:9 }}><button className="btn-g" onClick={doSave}>Save Order</button><button className="btn-o" onClick={() => setShow(false)}>Cancel</button></div>
+    </div>}
+    <div style={{ display:"flex",flexDirection:"column",gap:9 }}>
+      {orders.map(o => { const b=data.buyers.find(x=>x.id===o.buyerId); const l=data.locals.find(x=>x.id===o.localId); return (<div key={o.id} className="card">
+        <div style={{ display:"grid",gridTemplateColumns:"1fr auto",gap:9,marginBottom:10 }}>
+          <div><div style={{ fontSize:15,marginBottom:2 }}>{o.product} <span style={{ color:"#4a4030",fontSize:12 }}>× {o.qty?.toLocaleString()} pcs</span></div><div style={{ fontFamily:"'DM Mono',monospace",fontSize:8,color:"#3a3020",textTransform:"uppercase",letterSpacing:".1em" }}>{b?.name} · via {l?.businessName}</div></div>
+          <select value={o.stage} onChange={e => upStage(o.id,e.target.value)} style={{ background:SB(o.stage),border:"none",color:SC(o.stage),fontFamily:"'DM Mono',monospace",fontSize:8.5,letterSpacing:".1em",textTransform:"uppercase",padding:"4px 8px",cursor:"pointer",height:"fit-content" }}>{["negotiation","production","active","shipping","completed"].map(s => <option key={s} value={s}>{s}</option>)}</select>
+        </div>
+        <div style={{ display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(100px,1fr))",gap:7,paddingTop:9,borderTop:"1px solid #141210" }}>
+          <div><div className="kl">Sale Price</div><div style={{ fontFamily:"'Cormorant Garamond',serif",fontSize:17,color:"#c9a84c" }}>{fmt(o.salePrice)}</div></div>
+          <div><div className="kl">Profit</div><div style={{ fontFamily:"'Cormorant Garamond',serif",fontSize:17,color:"#22c55e" }}>{fmt(o.profit)}</div></div>
+          <div><div className="kl">Commission</div><div style={{ fontFamily:"'Cormorant Garamond',serif",fontSize:17,color:"#f59e0b" }}>{fmt(o.commission)}</div></div>
+          <div><div className="kl">Buyer Ref Code</div><div style={{ fontFamily:"'DM Mono',monospace",fontSize:10,color:"#c9a84c" }}>{o.referCode||"—"}</div></div>
+          <div><div className="kl">Discount</div><div style={{ fontSize:13,color:o.buyerDiscount>0?"#22c55e":"#2a2010" }}>{o.buyerDiscount>0?`${o.buyerDiscount}%`:"—"}</div></div>
+          <div><div className="kl">Invoice</div><div style={{ fontFamily:"'DM Mono',monospace",fontSize:9,color:"#3a3020" }}>{o.invoiceNo}</div></div>
+        </div>
+        {o.stage!=="completed" && <div style={{ marginTop:9,paddingTop:9,borderTop:"1px solid #141210",fontFamily:"'DM Mono',monospace",fontSize:9,color:"#f59e0b" }}>→ {STAGE_NEXT[o.stage]}</div>}
+      </div>); })}
+    </div>
+  </div>);
+}
+
+// ── AGENTS / WORKERS / PAYOUTS ────────────────────────────────────────────────
+function AgentsTab({ data }) {
+  return (<div>
+    <div className="sh">Agents ({data.agents.length})</div>
+    <div className="th" style={{ gridTemplateColumns:"1.5fr 1fr 1fr 1fr 1fr" }}><span>Agent</span><span>Code</span><span>Manufacturer Deals</span><span>Total Earned</span><span>Pending</span></div>
+    {data.agents.map(a => { const ml=data.locals.filter(l=>l.agentId===a.id); return (<div key={a.id} className="tr" style={{ gridTemplateColumns:"1.5fr 1fr 1fr 1fr 1fr" }}><div><div style={{ fontSize:13.5 }}>{a.name}</div><div style={{ fontFamily:"'DM Mono',monospace",fontSize:8,color:"#3a3020",marginTop:2 }}>{a.region}</div></div><span style={{ fontFamily:"'DM Mono',monospace",fontSize:11,color:"#c9a84c",letterSpacing:".12em" }}>{a.code}</span><span>{ml.length}</span><span style={{ fontFamily:"'Cormorant Garamond',serif",fontSize:16,color:"#22c55e" }}>{fmt(a.totalEarned)}</span><span style={{ fontFamily:"'Cormorant Garamond',serif",fontSize:16,color:"#f59e0b" }}>{fmt(a.pendingPayout)}</span></div>); })}
+  </div>);
+}
+
+function WorkersTab({ data }) {
+  return (<div>
+    <div className="sh">Workers ({data.workers.length})</div>
+    <div style={{ display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(220px,1fr))",gap:10 }}>
+      {data.workers.map(w => <div key={w.id} className="card"><div style={{ fontSize:15,marginBottom:3 }}>{w.name}</div><div style={{ fontFamily:"'DM Mono',monospace",fontSize:8.5,color:"#4a4030",textTransform:"uppercase",letterSpacing:".12em" }}>{w.role}</div></div>)}
+    </div>
+  </div>);
+}
+
+function PayoutsTab({ data, updateData }) {
+  const pending = data.agents.filter(a => a.pendingPayout>0);
+  const markPaid = id => updateData(d => ({ ...d, agents:d.agents.map(a => a.id===id?{ ...a,pendingPayout:0 }:a) }));
+  return (<div>
+    <div style={{ display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(130px,1fr))",gap:9,marginBottom:20 }}>
+      <Kpi l="Total Pending" v={fmt(pending.reduce((s,a)=>s+a.pendingPayout,0))} s="owed to agents" c="#f59e0b" />
+      <Kpi l="Agents Awaiting" v={pending.length} s="payout due" c="#ef4444" />
+      <Kpi l="Total Settled" v={fmt(data.agents.reduce((s,a)=>s+a.totalEarned-a.pendingPayout,0))} s="all time" c="#22c55e" />
+    </div>
+    <div className="sh">Pending Payouts</div>
+    <div className="th" style={{ gridTemplateColumns:"1.5fr 1fr 1fr 1fr auto" }}><span>Agent</span><span>Code</span><span>Phone</span><span>Amount</span><span></span></div>
+    {pending.map(a => (<div key={a.id} className="tr" style={{ gridTemplateColumns:"1.5fr 1fr 1fr 1fr auto" }}><span>{a.name}</span><span style={{ fontFamily:"'DM Mono',monospace",fontSize:11,color:"#c9a84c" }}>{a.code}</span><span style={{ fontSize:12,color:"#6a5e4a" }}>{a.phone}</span><span style={{ fontFamily:"'Cormorant Garamond',serif",fontSize:18,color:"#f59e0b" }}>{fmt(a.pendingPayout)}</span><button className="btn-g" style={{ fontSize:8.5,padding:"5px 12px" }} onClick={() => markPaid(a.id)}>Mark Paid</button></div>))}
+    {!pending.length && <div style={{ color:"#2a2010",fontFamily:"'DM Mono',monospace",fontSize:9.5,padding:14 }}>All payouts settled.</div>}
+  </div>);
+}
+
+function MyEarnings({ user, data }) {
+  const ag = data.agents.find(a => a.id===user.id);
+  const mo = data.orders.filter(o => o.agentId===user.id);
+  if (!ag) return null;
+  return (<div>
+    <div style={{ display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(130px,1fr))",gap:9,marginBottom:20 }}>
+      <Kpi l="Total Earned" v={fmt(ag.totalEarned)} s="from manufacturers" c="#22c55e" />
+      <Kpi l="Pending" v={fmt(ag.pendingPayout)} s="awaiting payout" c="#f59e0b" />
+      <Kpi l="Settled" v={fmt(ag.totalEarned-ag.pendingPayout)} s="received" c="#3b82f6" />
+      <Kpi l="Orders" v={mo.length} s="through my manufacturers" c="#c9a84c" />
+    </div>
+    <div style={{ background:"#0f0e0a",border:"1px solid #1a1810",padding:"16px 18px",marginBottom:20 }}>
+      <div className="lbl" style={{ marginBottom:8 }}>How Your Earnings Work</div>
+      <p style={{ fontSize:13.5,color:"#5a5040",lineHeight:1.85 }}>You make a deal with a local manufacturer: <em style={{ color:"#c9a84c" }}>"If buyers come through my code, you pay me {ag.commissionPct||10}% of your profit."</em> TL Textiles records every order placed through your manufacturers. Once the manufacturer receives payment, you get your commission.</p>
+    </div>
+    <div className="sh">Commission Breakdown</div>
+    <div className="th" style={{ gridTemplateColumns:"1.5fr 1fr 1fr 1fr 1fr" }}><span>Buyer</span><span>Product</span><span>Manufacturer Profit</span><span>Your Commission</span><span>Stage</span></div>
+    {mo.map(o => { const b=data.buyers.find(x=>x.id===o.buyerId); return (<div key={o.id} className="tr" style={{ gridTemplateColumns:"1.5fr 1fr 1fr 1fr 1fr" }}><span>{b?.name}</span><span style={{ color:"#6a5e4a" }}>{o.product}</span><span style={{ fontFamily:"'Cormorant Garamond',serif",fontSize:16 }}>{fmt(o.profit)}</span><span style={{ fontFamily:"'Cormorant Garamond',serif",fontSize:16,color:"#f59e0b" }}>{fmt(o.commission)}</span><span className="badge" style={{ background:SB(o.stage),color:SC(o.stage) }}>{o.stage}</span></div>); })}
+  </div>);
+}
+
+// ── VISITOR PAGE EDITOR ───────────────────────────────────────────────────────
+function VisitorPageEditor({ visitor, updateVisitor }) {
+  const [saved, setSaved] = useState(false);
+  const set = (k, v) => updateVisitor(p => ({ ...p, [k]:v }));
+  const showSaved = () => { setSaved(true); setTimeout(() => setSaved(false), 2000); };
+
+  const Field = ({ label, k, long }) => (
+    <div className="vp-row">
+      <div className="vp-key">{label}</div>
+      <div className="vp-val">
+        {long
+          ? <textarea className="inp" style={{ margin:"4px 0",minHeight:56 }} value={visitor[k]||""} onChange={e => set(k, e.target.value)} />
+          : <input className="inp" style={{ margin:"4px 0" }} value={visitor[k]||""} onChange={e => set(k, e.target.value)} />
+        }
+      </div>
+    </div>
+  );
+
+  const Toggle = ({ label, k }) => (
+    <div className="vp-row" style={{ alignItems:"center" }}>
+      <div className="vp-key">{label}</div>
+      <div className="vp-val" style={{ display:"flex",alignItems:"center",gap:10,padding:"10px 10px" }}>
+        <button className="tog" style={{ background:visitor[k]?"#c9a84c":"#2a2010" }} onClick={() => set(k, !visitor[k])}>
+          <span style={{ position:"absolute",width:16,height:16,borderRadius:"50%",background:"#fff",top:3,left:visitor[k]?20:3,transition:"left .2s" }} />
+        </button>
+        <span style={{ fontFamily:"'DM Mono',monospace",fontSize:9,color:visitor[k]?"#c9a84c":"#3a3020",letterSpacing:".12em",textTransform:"uppercase" }}>{visitor[k]?"On":"Off"}</span>
+      </div>
+    </div>
+  );
+
+  return (<div>
+    <div style={{ display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:20 }}>
+      <div className="sh" style={{ margin:0 }}>Visitor Page Content</div>
+      <button className="btn-g" style={{ display:"flex",alignItems:"center",gap:6 }} onClick={showSaved}>
+        <G n="save2" s={13} />{saved?"Saved ✓":"Save Changes"}
+      </button>
+    </div>
+    <p style={{ fontFamily:"'DM Mono',monospace",fontSize:9,color:"#4a4030",marginBottom:20,lineHeight:1.7,letterSpacing:".06em" }}>
+      Edit the text visitors see on the public website. Changes save instantly and persist — even after refresh.
+    </p>
+
+    {/* HERO */}
+    <div style={{ marginBottom:16 }}>
+      <div style={{ fontFamily:"'DM Mono',monospace",fontSize:8,letterSpacing:".2em",textTransform:"uppercase",color:"#c9a84c",marginBottom:8,paddingBottom:6,borderBottom:"1px solid #1a1810" }}>Hero Section</div>
+      <div style={{ border:"1px solid #1a1810" }}>
+        <Field label="Main Heading" k="heroTitle" />
+        <Field label="Italic Heading" k="heroTitleItalic" />
+        <Field label="Subtitle Text" k="heroSubtitle" long />
+      </div>
+    </div>
+
+    {/* REGISTRATION BANNER */}
+    <div style={{ marginBottom:16 }}>
+      <div style={{ fontFamily:"'DM Mono',monospace",fontSize:8,letterSpacing:".2em",textTransform:"uppercase",color:"#c9a84c",marginBottom:8,paddingBottom:6,borderBottom:"1px solid #1a1810" }}>Registration Banner</div>
+      <div style={{ border:"1px solid #1a1810" }}>
+        <Toggle label="Show Banner" k="showRegistrationBanner" />
+        <Field label="Banner Text" k="registrationNotice" />
+      </div>
+    </div>
+
+    {/* STATS */}
+    <div style={{ marginBottom:16 }}>
+      <div style={{ fontFamily:"'DM Mono',monospace",fontSize:8,letterSpacing:".2em",textTransform:"uppercase",color:"#c9a84c",marginBottom:8,paddingBottom:6,borderBottom:"1px solid #1a1810" }}>Stats Bar (4 numbers)</div>
+      <div style={{ border:"1px solid #1a1810" }}>
+        {[["Stat 1 Number","stat1Val"],["Stat 1 Label","stat1Label"],["Stat 2 Number","stat2Val"],["Stat 2 Label","stat2Label"],["Stat 3 Number","stat3Val"],["Stat 3 Label","stat3Label"],["Stat 4 Number","stat4Val"],["Stat 4 Label","stat4Label"]].map(([l,k]) => <Field key={k} label={l} k={k} />)}
+      </div>
+    </div>
+
+    {/* HOW IT WORKS */}
+    <div style={{ marginBottom:16 }}>
+      <div style={{ fontFamily:"'DM Mono',monospace",fontSize:8,letterSpacing:".2em",textTransform:"uppercase",color:"#c9a84c",marginBottom:8,paddingBottom:6,borderBottom:"1px solid #1a1810" }}>How It Works (4 cards)</div>
+      <div style={{ border:"1px solid #1a1810" }}>
+        {[["Card 1 Title","how1Title"],["Card 1 Text","how1Desc"],["Card 2 Title","how2Title"],["Card 2 Text","how2Desc"],["Card 3 Title","how3Title"],["Card 3 Text","how3Desc"],["Card 4 Title","how4Title"],["Card 4 Text","how4Desc"]].map(([l,k]) => <Field key={k} label={l} k={k} long={k.includes("Desc")} />)}
+      </div>
+    </div>
+
+    {/* BECOME AN AGENT */}
+    <div style={{ marginBottom:16 }}>
+      <div style={{ fontFamily:"'DM Mono',monospace",fontSize:8,letterSpacing:".2em",textTransform:"uppercase",color:"#c9a84c",marginBottom:8,paddingBottom:6,borderBottom:"1px solid #1a1810" }}>Become an Agent Section</div>
+      <div style={{ border:"1px solid #1a1810" }}>
+        {[["Heading","agentCTATitle"],["Description","agentCTADesc"],["Button Text","agentCTAButton"]].map(([l,k]) => <Field key={k} label={l} k={k} long={k==="agentCTADesc"} />)}
+      </div>
+    </div>
+
+    {/* CONTACT */}
+    <div style={{ marginBottom:16 }}>
+      <div style={{ fontFamily:"'DM Mono',monospace",fontSize:8,letterSpacing:".2em",textTransform:"uppercase",color:"#c9a84c",marginBottom:8,paddingBottom:6,borderBottom:"1px solid #1a1810" }}>Contact Details</div>
+      <div style={{ border:"1px solid #1a1810" }}>
+        {[["Email","contactEmail"],["Phone","contactPhone"],["Location","contactLocation"]].map(([l,k]) => <Field key={k} label={l} k={k} />)}
+      </div>
+    </div>
+
+    {/* FOOTER */}
+    <div style={{ marginBottom:16 }}>
+      <div style={{ fontFamily:"'DM Mono',monospace",fontSize:8,letterSpacing:".2em",textTransform:"uppercase",color:"#c9a84c",marginBottom:8,paddingBottom:6,borderBottom:"1px solid #1a1810" }}>Footer</div>
+      <div style={{ border:"1px solid #1a1810" }}>
+        <Field label="Footer Tagline" k="footerText" />
+      </div>
+    </div>
+
+    <div style={{ display:"flex",justifyContent:"flex-end",marginTop:8 }}>
+      <button className="btn-g" style={{ display:"flex",alignItems:"center",gap:6 }} onClick={showSaved}>
+        <G n="save2" s={13} />{saved?"Saved ✓":"Save Changes"}
+      </button>
+    </div>
+  </div>);
+}
+
+
+ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
+</script>
+
+</body>
+</html>
